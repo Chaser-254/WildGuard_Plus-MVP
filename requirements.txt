@@ -1,0 +1,14 @@
+flask
+flask-cors
+flask-sqlalchemy
+flask-migrate
+torch
+torchvision
+opencv-python
+pillow
+requests
+twilio
+python-dotenv
+numpy
+geopy
+gunicorn

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-grid">
+    <div class="map-container">
+        <div id="map"></div>
+    <div class="dashboard-grid">
+    <div class="map-container">
+        <div id="map"></div>
+    </div>
+    
+    <div class="sidebar1">
+        <div class="panel1">
+            <h3>Info Section</h3>
+        </div>
+        
+        <div class="panel1">
+            <h3>Statistics</h3>
+            <div id="stats" class="stats-grid">
+                <!-- Stats will be populated by JavaScript -->
+                 Loading detections...
+            </div>
+        </div>
+        
+        <div class="panel1">
+            <h3> Recent Detections</h3>
+            <div id="alerts" class="detection-list">
+                <div class="loading">Loading detections...</div>
+            </div>
+        </div>
+    </div>
+</div>
+    </div>
+    
+    <div class="sidebar">
+        <div class="panel">
+            <h3>Live Alerts</h3>
+            <div class="controls">
+                <button id="simulateDetection" class="btn btn-primary">Simulate Detection</button>
+                <button id="toggleDemo" class="btn btn-secondary">Start Demo Mode</button>
+                <button id="refreshData" class="btn btn-secondary">Refresh</button>
+                <button id="routeFinder" class="btn btn-primary">Route Direction</button>
+            </div>
+        </div>
+        <div class="panel">
+            <h3>Ranger Status</h3>
+            <div id="alerts" class="detection-status">
+                <div class="loading">Loading ranger Status...</div>
+            </div>
+        </div>
+        <div class="panel">
+            <h3>System Info</h3>
+            <p>This system monitors wildlife cameras and alerts rangers when wildlife are detected.</p>
+            <p><strong>Status:</strong> <span style="color: green;">●</span> Operational</p>
+            <p><strong>Last Update:</strong> <span id="lastUpdate">Just now</span></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script>
+    // get the last updated time
+    function updateLastUpdateTime() {
+        document.getElementById('lastUpdate').textContent = new Date().toLocaleString();
+    }
+    
+    setInterval(updateLastUpdateTime, 60000);
+    updateLastUpdateTime();
+</script>
+{% endblock %}
