@@ -95,10 +95,15 @@ class ElephantDashboard {
             maxZoom: 18
         }).addTo(this.map);
 
-        // Add a marker for Taita Taveta County
-        L.marker([-3.395565, 37.676113])
+        // Add a marker for Taveta KRCS Office
+        L.marker([-3.396444, 37.669592])
             .addTo(this.map)
             .bindPopup('<b>Taveta</b><br>KRCS Taveta Office')
+            .openPopup();
+        //Add a marker for Taveta KWS Office
+        L.marker([-3.397577, 37.677056])
+            .addTo(this.map)
+            .bindPopup('<b>Taveta</b><br>KWS Office Taveta')
             .openPopup();
 
         // // Add approximate boundary for Taita Taveta County (simplified)
