@@ -4,10 +4,10 @@
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-2.0+-green.svg)](https://flask.palletsprojects.com/)
 
-## 🌍 Overview
+## Overview
 WildGuard Plus is an AI-Powered Early Warning System designed to mitigate human-wildlife conflict in Taita Taveta County, Kenya. The system uses machine learning to detect approaching wildlife (particularly elephants and antelopes) and sends instant alerts to relevant authorities and community members, enabling timely response to prevent conflicts.
 
-## 🚀 Key Features
+## Key Features
 
 - **Real-time Wildlife Detection**: AI-powered detection of elephants and antelopes
 - **Instant Alerts**: SMS and in-app notifications to rangers and community members
@@ -16,21 +16,21 @@ WildGuard Plus is an AI-Powered Early Warning System designed to mitigate human-
 - **Ranger Coordination**: Tools for managing ranger teams and responses
 - **Comprehensive Analytics**: Data-driven insights into wildlife patterns
 
-## 📸 Screenshots
+## Screenshots
 
 ![Dashboard Preview](app/static/images/dashboard-preview.png)
 *Figure 1: WildGuard Plus Dashboard*
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Backend**: Python, Flask
 - **Frontend**: HTML5, CSS3, JavaScript, Bootstrap 5, MapLibre GL
 - **Database**: SQLite (Development), PostgreSQL (Production)
 - **AI/ML**: Custom-trained YOLO model for wildlife detection
 - **Maps**: MapLibre GL for interactive mapping
-- **Deployment**: Docker, Nginx
+- **Deployment**: Render,Netlify
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - Python 3.8+
@@ -80,7 +80,7 @@ WildGuard Plus is an AI-Powered Early Warning System designed to mitigate human-
 7. **Access the application**
    Open your browser and navigate to `http://localhost:5000`
 
-## 🌐 Project Structure
+## Project Structure
 
 ```
 WildGuard_Plus-MVP/
@@ -110,7 +110,7 @@ WildGuard_Plus-MVP/
 └── run.py
 ```
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Please follow these steps:
 
@@ -120,25 +120,25 @@ We welcome contributions! Please follow these steps:
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 📧 Contact
+## Contact
 
 For more information, please contact:
 - **Email**: info@wildguardplus.org
-- **Website**: [www.wildguardplus.org](https://www.wildguardplus.org)
+- **Phone Number**: +254111363870
 - **Location**: Taita Taveta, Kenya
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Kenya Wildlife Service (KWS)
-- Local communities of Taita Taveta
+- Local communities of Taita Taveta County, Taveta
 - All contributors and supporters
 
 ---
 
 <div align="center">
-  Made with ❤️ in Kenya | © 2025 WildGuard Plus
+  © 2025 WildGuard Plus
 </div>
