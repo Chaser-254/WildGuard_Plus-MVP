@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Help Center - WildGuard Plus{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold mb-3">
+            <i class="bi bi-question-circle-fill text-primary me-2"></i>Help Center
+        </h1>
+        <p class="lead text-muted">Find answers to common questions and learn how to use WildGuard Plus effectively</p>
+    </div>
+
+    <div class="row g-4">
+        <!-- Getting Started -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-primary bg-opacity-10 p-3 rounded-circle me-3">
+                            <i class="bi bi-rocket-takeoff text-primary fs-4"></i>
+                        </div>
+                        <h3 class="h5 mb-0">Getting Started</h3>
+                    </div>
+                    <div class="accordion" id="gettingStartedAccordion">
+                        <div class="accordion-item border-0 mb-2">
+                            <h2 class="accordion-header" id="headingOne">
+                                <button class="accordion-button bg-light rounded" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                                    How do I create a new route?
+                                </button>
+                            </h2>
+                            <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#gettingStartedAccordion">
+                                <div class="accordion-body">
+                                    To create a new route, go to the dashboard and use the Route Direction panel. 
+                                    Enter your start and end points, then click 'Find Route' to generate the optimal path.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item border-0">
+                            <h2 class="accordion-header" id="headingTwo">
+                                <button class="accordion-button collapsed bg-light rounded" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                                    How do I view wildlife detections?
+                                </button>
+                            </h2>
+                            <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#gettingStartedAccordion">
+                                <div class="accordion-body">
+                                    All wildlife detections are displayed in the Recent Detections panel. You can filter 
+                                    and sort these detections using the available options in the panel.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Troubleshooting -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-warning bg-opacity-10 p-3 rounded-circle me-3">
+                            <i class="bi bi-tools text-warning fs-4"></i>
+                        </div>
+                        <h3 class="h5 mb-0">Troubleshooting</h3>
+                    </div>
+                    <div class="accordion" id="troubleshootingAccordion">
+                        <div class="accordion-item border-0 mb-2">
+                            <h2 class="accordion-header" id="headingThree">
+                                <button class="accordion-button bg-light rounded" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                                    The map isn't loading
+                                </button>
+                            </h2>
+                            <div id="collapseThree" class="accordion-collapse collapse show" data-bs-parent="#troubleshootingAccordion">
+                                <div class="accordion-body">
+                                    Try refreshing your browser or clearing your cache. If the issue persists, 
+                                    ensure you have a stable internet connection and contact support if needed.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item border-0">
+                            <h2 class="accordion-header" id="headingFour">
+                                <button class="accordion-button collapsed bg-light rounded" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour">
+                                    I can't log in to my account
+                                </button>
+                            </h2>
+                            <div id="collapseFour" class="accordion-collapse collapse" data-bs-parent="#troubleshootingAccordion">
+                                <div class="accordion-body">
+                                    Ensure you're using the correct email and password. If you've forgotten your password, 
+                                    use the 'Forgot Password' link on the login page to reset it.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Support -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-info bg-opacity-10 p-3 rounded-circle me-3">
+                            <i class="bi bi-headset text-info fs-4"></i>
+                        </div>
+                        <h3 class="h5 mb-0">Support</h3>
+                    </div>
+                    <p class="mb-4">Can't find what you're looking for? Our support team is here to help.</p>
+                    <div class="d-grid gap-2">
+                        <a href="/contact" class="btn btn-outline-primary">
+                            <i class="bi bi-envelope me-2"></i>Contact Support
+                        </a>
+                        <a href="#" class="btn btn-outline-secondary">
+                            <i class="bi bi-download me-2"></i>Download User Guide
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -26,10 +26,12 @@ def create_app(config_name='default'):
     from app.routes.detections import detections_bp
     from app.routes.subscribers import subscribers_bp
     from app.routes.dashboard import dashboard_bp
+    from app.routes.pages import pages_bp
     
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(alerts_bp, url_prefix='/api')
     app.register_blueprint(detections_bp, url_prefix='/api')
     app.register_blueprint(subscribers_bp, url_prefix='/api')
+    app.register_blueprint(pages_bp)
     
     return app

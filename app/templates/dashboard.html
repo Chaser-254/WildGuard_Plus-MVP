@@ -1,71 +1,232 @@
 {% extends "base.html" %}
 
+{% block head %}
+{{ super() }}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<!-- Leaflet Routing Machine CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+<style>
+    /* Additional CSS for route features */
+    .route-start-marker {
+        background: #10b981;
+        color: white;
+        border-radius: 50%;
+        text-align: center;
+        font-weight: bold;
+        line-height: 24px;
+        width: 24px;
+        height: 24px;
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .route-end-marker {
+        background: #ef4444;
+        color: white;
+        border-radius: 50%;
+        text-align: center;
+        font-weight: bold;
+        line-height: 24px;
+        width: 24px;
+        height: 24px;
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .chart-container {
+        height: 200px;
+        position: relative;
+        margin: 15px 0;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+        margin-top: 5px;
+    }
+
+    .form-control-range {
+        width: 100%;
+        margin: 10px 0;
+    }
+
+    input[type="color"] {
+        width: 100%;
+        height: 40px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-top: 5px;
+    }
+
+    .btn-block {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .mt-2 { margin-top: 10px; }
+    .mt-3 { margin-top: 15px; }
+
+    /* Remove the route controls from map */
+    .route-controls {
+        display: none;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="dashboard-grid">
     <div class="map-container">
         <div id="map"></div>
-    <div class="dashboard-grid">
-    <div class="map-container">
-        <div id="map"></div>
     </div>
     
-    <div class="sidebar1">
-        <div class="panel1">
-            <h3>Info Section</h3>
+    <div class="sidebar-panels">
+        <!-- Route Direction Panel (now in sidebar) -->
+        <div id="routePanel" class="panel">
+            <h3><i class="bi bi-signpost-split me-2"></i>Route Direction</h3>
+            <div class="form-group">
+                <label for="startPoint">Start Point:</label>
+                <input type="text" id="startPoint" class="form-control" placeholder="Click on map or enter coordinates (lat,lng)">
+            </div>
+            <div class="form-group">
+                <label for="endPoint">End Point:</label>
+                <input type="text" id="endPoint" class="form-control" placeholder="Click on map or enter coordinates (lat,lng)">
+            </div>
+            
+            <div class="form-group">
+                <label>
+                    Buffer Radius: <span id="bufferValue">1000m</span>
+                </label>
+                <input type="range" id="bufferRadius" class="form-control-range" min="100" max="5000" step="100" value="1000">
+            </div>
+            
+            <div class="form-group">
+                <label for="bufferColor">Buffer Color:</label>
+                <input type="color" id="bufferColor" value="#f24e39">
+            </div>
+            
+            <div class="controls d-grid gap-2">
+                <button id="findRoute" class="btn btn-primary">
+                    <i class="bi bi-signpost-split me-1"></i> Find Route
+                </button>
+                <button id="clearRoute" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle me-1"></i> Clear Route
+                </button>
+            </div>
+            
+            <div class="mt-3">
+                <h4>Route Statistics</h4>
+                <div id="routeStats">
+                    <p><strong>Total Distance:</strong> <span id="totalDistance">-</span></p>
+                    <p><strong>Estimated Time:</strong> <span id="estimatedTime">-</span></p>
+                    <p><strong>Road Type Analysis:</strong> <span id="roadType">-</span></p>
+                </div>
+                
+                <div class="chart-container">
+                    <h5>Road Length by Type (km)</h5>
+                    <canvas id="roadLengthChart"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <h5>Distribution by Road Type</h5>
+                    <canvas id="distributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Alerts Panel -->
+        <div class="panel">
+            <h3><i class="bi bi-bell-fill text-warning me-2"></i>Live Alerts</h3>
+            <div class="controls d-grid gap-2">
+                <button id="simulateDetection" class="btn btn-warning text-white">
+                    <i class="bi bi-lightning-charge-fill me-1"></i> Simulate Detection
+                </button>
+                <div class="btn-group w-100" role="group">
+                    <button id="toggleDemo" class="btn btn-outline-secondary">
+                        <i class="bi bi-play-circle me-1"></i> Demo Mode
+                    </button>
+                    <button id="refreshData" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+            </div>
         </div>
         
-        <div class="panel1">
-            <h3>Statistics</h3>
+        <div class="panel">
+            <h3><i class="bi bi-graph-up me-2"></i>Statistics</h3>
             <div id="stats" class="stats-grid">
                 <!-- Stats will be populated by JavaScript -->
-                 Loading detections...
             </div>
         </div>
         
-        <div class="panel1">
-            <h3> Recent Detections</h3>
+        <div class="panel">
+            <h3><i class="bi bi-binoculars-fill me-2"></i>Recent Detections</h3>
             <div id="alerts" class="detection-list">
-                <div class="loading">Loading detections...</div>
+                <div class="loading text-muted">
+                    <i class="bi bi-arrow-repeat me-2"></i>Loading detections...
+                </div>
             </div>
         </div>
-    </div>
-</div>
-    </div>
-    
-    <div class="sidebar">
+        
         <div class="panel">
-            <h3>Live Alerts</h3>
-            <div class="controls">
-                <button id="simulateDetection" class="btn btn-primary">Simulate Detection</button>
-                <button id="toggleDemo" class="btn btn-secondary">Start Demo Mode</button>
-                <button id="refreshData" class="btn btn-secondary">Refresh</button>
-                <button id="routeFinder" class="btn btn-primary">Route Direction</button>
+            <h3><i class="bi bi-person-badge-fill me-2"></i>Ranger Status</h3>
+            <div id="rangerStatus" class="detection-status">
+                <div class="loading text-muted">
+                    <i class="bi bi-arrow-repeat me-2"></i>Loading ranger status...
+                </div>
             </div>
         </div>
+        
         <div class="panel">
-            <h3>Ranger Status</h3>
-            <div id="alerts" class="detection-status">
-                <div class="loading">Loading ranger Status...</div>
+            <h3><i class="bi bi-info-circle-fill text-primary me-2"></i>System Info</h3>
+            <div class="d-flex align-items-center mb-2">
+                <i class="bi bi-info-circle me-2 text-muted"></i>
+                <p class="mb-0">This system monitors wildlife cameras and alerts rangers when wildlife are detected.</p>
             </div>
-        </div>
-        <div class="panel">
-            <h3>System Info</h3>
-            <p>This system monitors wildlife cameras and alerts rangers when wildlife are detected.</p>
-            <p><strong>Status:</strong> <span style="color: green;">●</span> Operational</p>
-            <p><strong>Last Update:</strong> <span id="lastUpdate">Just now</span></p>
+            <div class="d-flex align-items-center mb-2">
+                <span class="me-2"><strong>Status:</strong></span>
+                <span class="badge bg-success">
+                    <i class="bi bi-check-circle-fill me-1"></i> Operational
+                </span>
+            </div>
+            <div class="d-flex align-items-center">
+                <i class="bi bi-clock-history me-2 text-muted"></i>
+                <span><strong>Last Update:</strong> <span id="lastUpdate">Just now</span></span>
+            </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
+<!-- Leaflet JS (must come before routing machine) -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Leaflet Routing Machine (provides L.Routing) -->
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+
+<!-- Turf (for buffer operations) -->
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
+<!-- Chart.js (for the charts) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<!-- Finally your dashboard code (after the libs) -->
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+
 <script>
-    // get the last updated time
+    // Update last update time
     function updateLastUpdateTime() {
         document.getElementById('lastUpdate').textContent = new Date().toLocaleString();
     }
-    
+
     setInterval(updateLastUpdateTime, 60000);
     updateLastUpdateTime();
 </script>
