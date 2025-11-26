@@ -96,7 +96,7 @@ class ElephantDashboard {
         }).addTo(this.map);
 
         // Add a marker for Taveta KRCS Office
-        L.marker([-3.396444, 37.669592])
+        L.marker([-3.396443, 37.676411])
             .addTo(this.map)
             .bindPopup('<b>Taveta</b><br>KRCS Taveta Office')
             .openPopup();
