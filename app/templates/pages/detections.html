@@ -1,0 +1,390 @@
+<!-- app/templates/detections.html -->
+{% extends "base.html" %}
+
+{% block title %}Wildlife Detections - WildGuard Plus{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- Detection Form -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Report New Detection</h5>
+                </div>
+                <div class="card-body">
+                    <form id="detectionForm">
+                        <div class="mb-3">
+                            <label for="species" class="form-label">Species</label>
+                            <select class="form-select" id="species" required>
+                                <option value="">Select species...</option>
+                                <option value="elephant">Elephant</option>
+                                <option value="lion">Lion</option>
+                                <option value="leopard">Leopard</option>
+                                <option value="buffalo">Buffalo</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confidence" class="form-label">Confidence Level: <span id="confidenceValue">50</span>%</label>
+                            <input type="range" class="form-range" id="confidence" min="0" max="100" value="50">
+                        </div>
+                        <div class="mb-3">
+                            <label for="location" class="form-label">Location (Lat, Lng)</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="latitude" placeholder="Latitude" required>
+                                <input type="text" class="form-control" id="longitude" placeholder="Longitude" required>
+                                <button class="btn btn-outline-secondary" type="button" id="getLocation">
+                                    <i class="fas fa-location-arrow"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="image" class="form-label">Upload Image (Optional)</label>
+                            <input class="form-control" type="file" id="image" accept="image/*">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" id="submitBtn">
+                            <i class="fas fa-paper-plane me-2"></i>Submit Detection
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detection History -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Detections</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="detectionsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Species</th>
+                                    <th>Confidence</th>
+                                    <th>Location</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="detectionsList">
+                                <!-- Detections will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-white">
+                    <nav>
+                        <ul class="pagination pagination-sm justify-content-center mb-0" id="pagination">
+                            <!-- Pagination will be added here -->
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detection Details Modal -->
+<div class="modal fade" id="detectionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detectionModalLabel">Detection Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="detectionDetails">
+                <!-- Detection details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="verifyBtn">Verify Detection</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Update confidence value display
+    const confidenceSlider = document.getElementById('confidence');
+    const confidenceValue = document.getElementById('confidenceValue');
+    confidenceSlider.addEventListener('input', function() {
+        confidenceValue.textContent = this.value;
+    });
+
+    // Get current location
+    document.getElementById('getLocation').addEventListener('click', function() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    document.getElementById('latitude').value = position.coords.latitude.toFixed(6);
+                    document.getElementById('longitude').value = position.coords.longitude.toFixed(6);
+                },
+                (error) => {
+                    alert('Unable to retrieve your location. Please enter coordinates manually.');
+                    console.error('Geolocation error:', error);
+                }
+            );
+        } else {
+            alert('Geolocation is not supported by your browser. Please enter coordinates manually.');
+        }
+    });
+
+    // Form submission
+    document.getElementById('detectionForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Submitting...';
+
+        try {
+            const formData = new FormData();
+            formData.append('species', document.getElementById('species').value);
+            formData.append('confidence', document.getElementById('confidence').value);
+            formData.append('location', `${document.getElementById('latitude').value},${document.getElementById('longitude').value}`);
+            
+            const imageFile = document.getElementById('image').files[0];
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
+
+            const response = await fetch('/api/detections', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to submit detection');
+            }
+
+            const data = await response.json();
+            addDetectionToTable(data);
+            showAlert('Detection submitted successfully!', 'success');
+            this.reset();
+            confidenceValue.textContent = '50';
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('Failed to submit detection. Please try again.', 'danger');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Submit Detection';
+        }
+    });
+
+    // Load detections
+    loadDetections();
+
+    // Set up Socket.IO for real-time updates
+    setupSocketIO();
+});
+
+function loadDetections(page = 1) {
+    fetch(`/api/detections?page=${page}&per_page=10`)
+        .then(response => response.json())
+        .then(data => {
+            const detectionsList = document.getElementById('detectionsList');
+            detectionsList.innerHTML = '';
+
+            data.items.forEach(detection => {
+                detectionsList.appendChild(createDetectionRow(detection));
+            });
+
+            updatePagination(data.pages, page);
+        })
+        .catch(error => {
+            console.error('Error loading detections:', error);
+            showAlert('Failed to load detections. Please refresh the page.', 'danger');
+        });
+}
+
+function createDetectionRow(detection) {
+    const row = document.createElement('tr');
+    row.dataset.id = detection.id;
+    
+    const timeCell = document.createElement('td');
+    timeCell.textContent = new Date(detection.timestamp).toLocaleString();
+    
+    const speciesCell = document.createElement('td');
+    speciesCell.innerHTML = `<span class="badge bg-${getSpeciesBadgeClass(detection.species)}">
+        <i class="fas fa-${getSpeciesIcon(detection.species)} me-1"></i>
+        ${detection.species.charAt(0).toUpperCase() + detection.species.slice(1)}
+    </span>`;
+    
+    const confidenceCell = document.createElement('td');
+    confidenceCell.innerHTML = `
+        <div class="progress" style="height: 20px;">
+            <div class="progress-bar" role="progressbar" 
+                 style="width: ${detection.confidence}%" 
+                 aria-valuenow="${detection.confidence}" 
+                 aria-valuemin="0" 
+                 aria-valuemax="100">
+                ${Math.round(detection.confidence)}%
+            </div>
+        </div>
+    `;
+    
+    const locationCell = document.createElement('td');
+    // Format location: support {location:{lat,lng}} or top-level latitude/longitude
+    const formatLocation = (d) => {
+        try {
+            // If location is an object with lat/lng
+            if (d.location && typeof d.location === 'object') {
+                const lat = d.location.lat || d.location.latitude || d.latitude;
+                const lng = d.location.lng || d.location.longitude || d.longitude;
+                if (lat != null && lng != null) return `${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`;
+            }
+            // Fallback to top-level fields
+            if (d.latitude != null && d.longitude != null) return `${Number(d.latitude).toFixed(6)}, ${Number(d.longitude).toFixed(6)}`;
+            // If it's already a string, return as-is
+            if (typeof d.location === 'string') return d.location;
+        } catch (e) {
+            console.warn('Failed to format location', e);
+        }
+        return 'Unknown';
+    };
+
+    locationCell.textContent = formatLocation(detection);
+    
+    const statusCell = document.createElement('td');
+    statusCell.innerHTML = detection.is_verified 
+        ? '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Verified</span>'
+        : '<span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Pending</span>';
+    
+    const actionsCell = document.createElement('td');
+    actionsCell.innerHTML = `
+        <button class="btn btn-sm btn-outline-primary view-detection" data-id="${detection.id}">
+            <i class="fas fa-eye"></i>
+        </button>
+    `;
+    
+    row.append(timeCell, speciesCell, confidenceCell, locationCell, statusCell, actionsCell);
+    return row;
+}
+
+function getSpeciesBadgeClass(species) {
+    const classes = {
+        'elephant': 'primary',
+        'lion': 'danger',
+        'leopard': 'warning',
+        'buffalo': 'secondary'
+    };
+    return classes[species.toLowerCase()] || 'info';
+}
+
+function getSpeciesIcon(species) {
+    const icons = {
+        'elephant': 'elephant',
+        'lion': 'paw',
+        'leopard': 'paw',
+        'buffalo': 'cow'
+    };
+    return icons[species.toLowerCase()] || 'paw';
+}
+
+function updatePagination(totalPages, currentPage) {
+    const pagination = document.getElementById('pagination');
+    pagination.innerHTML = '';
+
+    // Previous button
+    const prevLi = document.createElement('li');
+    prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+    prevLi.innerHTML = `<a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a>`;
+    pagination.appendChild(prevLi);
+
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+        const li = document.createElement('li');
+        li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+        li.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
+        pagination.appendChild(li);
+    }
+
+    // Next button
+    const nextLi = document.createElement('li');
+    nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+    nextLi.innerHTML = `<a class="page-link" href="#" data-page="${currentPage + 1}">Next</a>`;
+    pagination.appendChild(nextLi);
+
+    // Add click event listeners
+    pagination.querySelectorAll('.page-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (!e.target.closest('.disabled')) {
+                loadDetections(parseInt(e.target.dataset.page));
+            }
+        });
+    });
+}
+
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+    alertDiv.role = 'alert';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+
+function setupSocketIO() {
+    // Ensure the Socket.IO client script is available (Flask-SocketIO serves /socket.io/socket.io.js)
+    if (typeof io === 'undefined') {
+        const s = document.createElement('script');
+        s.src = '/socket.io/socket.io.js';
+        s.onload = initSocket;
+        s.onerror = function() { console.error('Failed to load Socket.IO client'); };
+        document.head.appendChild(s);
+    } else {
+        initSocket();
+    }
+
+    function initSocket() {
+        try {
+            const socket = io();
+            socket.on('connect', () => console.log('Socket.IO connected'));
+            socket.on('disconnect', () => console.log('Socket.IO disconnected'));
+            socket.on('new_detection', (detection) => {
+                // Format location for display
+                const loc = (function(d){
+                    if (d.location && typeof d.location === 'object') {
+                        const lat = d.location.lat || d.location.latitude || d.latitude;
+                        const lng = d.location.lng || d.location.longitude || d.longitude;
+                        if (lat != null && lng != null) return `${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`;
+                    }
+                    if (d.latitude != null && d.longitude != null) return `${Number(d.latitude).toFixed(6)}, ${Number(d.longitude).toFixed(6)}`;
+                    return (typeof d.location === 'string') ? d.location : 'Unknown';
+                })(detection);
+
+                showAlert(`New ${detection.species} detection at ${loc}`, 'info');
+                addDetectionToTable(detection);
+            });
+        } catch (e) {
+            console.error('Socket.IO initialization failed:', e);
+        }
+    }
+}
+
+function addDetectionToTable(detection) {
+    const detectionsList = document.getElementById('detectionsList');
+    const newRow = createDetectionRow(detection);
+    
+    // Insert at the top of the table
+    if (detectionsList.firstChild) {
+        detectionsList.insertBefore(newRow, detectionsList.firstChild);
+    } else {
+        detectionsList.appendChild(newRow);
+    }
+}
+</script>
+{% endblock %}

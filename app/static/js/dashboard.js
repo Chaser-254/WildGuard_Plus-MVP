@@ -173,22 +173,28 @@ class ElephantDashboard {
             this.cameraMarkers.push(marker);
         });
 
-        // Add detection markers with custom icons - positioned in Taita Taveta County
+        // Add detection markers with custom icons - ensure we display lat/lng and handle fallbacks
         detections.forEach(detection => {
-            if (!detection.location) return;
+            // Determine lat/lng from multiple possible shapes (location object or top-level fields)
+            const lat = (detection.location && detection.location.lat) || detection.latitude || detection.lat;
+            const lng = (detection.location && detection.location.lng) || detection.longitude || detection.lng;
+
+            if (lat == null || lng == null) return; // skip if no coordinates
+
             const confidencePercent = (detection.confidence * 100).toFixed(1);
             const timestamp = new Date(detection.timestamp).toLocaleString();
 
-            const marker = L.marker([detection.location.lat, detection.location.lng], {
+            const marker = L.marker([lat, lng], {
                 icon: this.icons.detection
             })
             .bindPopup(`
                 <div class="detection-popup">
                     <h4>Elephant Detected!</h4>
-                    <p><strong>Camera:</strong> ${detection.camera_id}</p>
+                    <p><strong>Camera:</strong> ${detection.camera_id || 'N/A'}</p>
                     <p><strong>Confidence:</strong> ${confidencePercent}%</p>
                     <p><strong>Time:</strong> ${timestamp}</p>
-                    <p><strong>Location:</strong> ${detection.location.lat.toFixed(4)}, ${detection.location.lng.toFixed(4)}</p>
+                    <p><strong>Latitude:</strong> ${lat.toFixed(6)}</p>
+                    <p><strong>Longitude:</strong> ${lng.toFixed(6)}</p>
                     ${detection.image_path ? `<p><strong>Image:</strong> Available</p>` : ''}
                 </div>
             `)
@@ -217,13 +223,19 @@ class ElephantDashboard {
             const timestamp = new Date(detection.timestamp).toLocaleString();
             const isRecent = this.isRecentDetection(detection.timestamp);
 
+            // Fallbacks for location
+            const lat = (detection.location && detection.location.lat) || detection.latitude || detection.lat || null;
+            const lng = (detection.location && detection.location.lng) || detection.longitude || detection.lng || null;
+
+            const locText = (lat != null && lng != null) ? `${lat.toFixed(4)}, ${lng.toFixed(4)}` : 'Unknown';
+
             return `
                 <div class="alert-panel ${isRecent ? 'recent' : ''}">
                     <strong>Elephant Detected</strong><br>
-                    <strong>Camera:</strong> ${detection.camera_id}<br>
+                    <strong>Camera:</strong> ${detection.camera_id || 'N/A'}<br>
                     <strong>Confidence:</strong> ${confidencePercent}%<br>
                     <strong>Time:</strong> ${timestamp}<br>
-                    <small>Location: ${detection.location.lat.toFixed(4)}, ${detection.location.lng.toFixed(4)}</small>
+                    <small>Location: ${locText}</small>
                 </div>
             `;
         }).join('');
@@ -340,7 +352,7 @@ class ElephantDashboard {
                 image_path: `/static/images/detection_${Math.floor(Math.random() * 3) + 1}.jpg`
             };
 
-            const response = await fetch('/api/alert', {
+            const response = await fetch('/api/alert/simulate', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(detectionData)
@@ -349,10 +361,11 @@ class ElephantDashboard {
             const result = await response.json();
 
             if (result.status === 'success') {
-                this.showNotification('Detection simulated successfully!', 'success');
+                const sent = result.notifications_sent != null ? result.notifications_sent : 'unknown';
+                this.showNotification(`Detection simulated — notifications sent: ${sent}`, 'success');
                 this.loadMapData(); // Refresh data
             } else {
-                this.showNotification(result.message, 'error');
+                this.showNotification(result.message || 'Simulation failed', 'error');
             }
         } catch (error) {
             console.error('Error simulating detection:', error);

@@ -2,6 +2,7 @@ flask
 flask-cors
 flask-sqlalchemy
 flask-migrate
+flask-socketio
 torch
 torchvision
 opencv-python
@@ -12,3 +13,4 @@ python-dotenv
 numpy
 geopy
 gunicorn
+ultralytics>=8.0.0

@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Wildlife Detection System - Test</h1>
+    
+    <div class="row mt-4">
+        <!-- Detection Controls -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Test Detection</h5>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-primary btn-block mb-2" onclick="simulateDetection()">
+                        🎬 Simulate Detection
+                    </button>
+                    <button class="btn btn-info btn-block mb-2" onclick="loadDashboardSummary()">
+                        📊 Refresh Stats
+                    </button>
+                    <button class="btn btn-warning btn-block" onclick="clearAllDetections()">
+                        🗑️ Clear All
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Cameras -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5>Available Cameras</h5>
+                </div>
+                <div class="card-body" id="cameras-list" style="max-height: 300px; overflow-y: auto;">
+                    Loading...
+                </div>
+            </div>
+        </div>
+        
+        <!-- Dashboard Summary -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Dashboard Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <h3 id="total-detections">0</h3>
+                                <p class="text-muted">Total Detections</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <h3 id="verified-detections">0</h3>
+                                <p class="text-muted">Verified</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <h3 id="high-confidence">0</h3>
+                                <p class="text-muted">High Confidence (90%+)</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <h3 id="active-cameras">0</h3>
+                                <p class="text-muted">Active Cameras</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Top Species -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5>Top Detected Species</h5>
+                </div>
+                <div class="card-body">
+                    <div id="top-species">
+                        <p class="text-muted">No detections yet</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Detections -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5>Recent Detections</h5>
+                </div>
+                <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                    <div id="recent-detections">
+                        <p class="text-muted">No detections yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 999;"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+
+// Connect to WebSocket
+socket.on('connect', () => {
+    console.log('Connected to WebSocket');
+    showToast('Connected to server', 'success');
+});
+
+socket.on('new_detection', (data) => {
+    console.log('New detection received:', data);
+    showToast(`🦁 ${data.species.toUpperCase()} detected with ${Math.round(data.confidence * 100)}% confidence!`, 'info');
+    loadDashboardSummary();
+});
+
+// Load cameras
+function loadCameras() {
+    fetch('/api/detections/cameras')
+        .then(r => r.json())
+        .then(data => {
+            const camerasList = document.getElementById('cameras-list');
+            if (data.cameras && data.cameras.length > 0) {
+                camerasList.innerHTML = data.cameras.map(cam => `
+                    <div class="mb-2 p-2 border rounded">
+                        <strong>${cam.name}</strong>
+                        <div class="small text-muted">
+                            📍 ${cam.latitude.toFixed(4)}, ${cam.longitude.toFixed(4)}
+                            <br>
+                            ${cam.is_active ? '🟢 Active' : '🔴 Inactive'}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                camerasList.innerHTML = '<p class="text-muted">No cameras configured</p>';
+            }
+        })
+        .catch(err => console.error('Error loading cameras:', err));
+}
+
+// Load dashboard summary
+function loadDashboardSummary() {
+    fetch('/api/detections/dashboard-summary')
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const summary = data.summary;
+                document.getElementById('total-detections').textContent = summary.total_detections;
+                document.getElementById('verified-detections').textContent = summary.verified_detections;
+                document.getElementById('high-confidence').textContent = summary.high_confidence_count;
+                document.getElementById('active-cameras').textContent = summary.active_cameras;
+                
+                // Update top species
+                const topSpeciesList = document.getElementById('top-species');
+                if (summary.top_species.length > 0) {
+                    topSpeciesList.innerHTML = summary.top_species.map(s => `
+                        <div class="mb-2">
+                            <strong>${s.species}</strong>: ${s.count} detections
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar" style="width: ${(s.count / summary.total_detections * 100)}%"></div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                
+                // Update recent detections
+                const recentList = document.getElementById('recent-detections');
+                if (summary.recent_detections.length > 0) {
+                    recentList.innerHTML = summary.recent_detections.map(d => `
+                        <div class="mb-2 p-2 border-left border-info">
+                            <div class="d-flex justify-content-between">
+                                <strong>${d.species}</strong>
+                                <span class="badge badge-primary">${Math.round(d.confidence * 100)}%</span>
+                            </div>
+                            <div class="small text-muted">
+                                📍 ${d.latitude.toFixed(4)}, ${d.longitude.toFixed(4)}
+                                <br>
+                                🕐 ${new Date(d.timestamp).toLocaleTimeString()}
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    recentList.innerHTML = '<p class="text-muted">No detections yet</p>';
+                }
+            }
+        })
+        .catch(err => console.error('Error loading summary:', err));
+}
+
+// Simulate a detection
+function simulateDetection() {
+    fetch('/api/alert/simulate', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            console.log('Simulation response:', data);
+            if (data.status === 'success') {
+                showToast(`✅ Detection simulated! Notifications sent: ${data.notifications_sent}`, 'success');
+                loadDashboardSummary();
+            } else {
+                showToast('❌ Simulation failed', 'danger');
+            }
+        })
+        .catch(err => {
+            console.error('Error simulating detection:', err);
+            showToast('❌ Error: ' + err, 'danger');
+        });
+}
+
+// Clear all detections
+function clearAllDetections() {
+    if (confirm('Are you sure you want to clear all detections? This cannot be undone.')) {
+        fetch('http://localhost:5000/flask clear-detections -y', {
+            method: 'POST'
+        }).then(() => {
+            showToast('✅ Detections cleared', 'success');
+            loadDashboardSummary();
+        }).catch(err => {
+            console.error('Error:', err);
+            showToast('Use CLI: flask clear-detections -y', 'warning');
+        });
+    }
+}
+
+// Toast notifications
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} alert-dismissible fade show`;
+    toast.setAttribute('role', 'alert');
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="close" data-dismiss="alert">
+            <span>&times;</span>
+        </button>
+    `;
+    container.appendChild(toast);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        toast.remove();
+    }, 5000);
+}
+
+// Initial load
+loadCameras();
+loadDashboardSummary();
+
+// Refresh every 10 seconds
+setInterval(loadDashboardSummary, 10000);
+</script>
+{% endblock %}

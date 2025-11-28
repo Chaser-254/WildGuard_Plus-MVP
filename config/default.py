@@ -1,22 +1,31 @@
+# config/default.py
 import os
 
 class Config:
-    # Flask Configuration
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
-    DEBUG = False
-    TESTING = False
-    
-    # Database Configuration
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///elephant_detections.db'
+    # Database
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///wildguard.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # Application Settings
-    NOTIFICATION_COOLDOWN = int(os.environ.get('NOTIFICATION_COOLDOWN', 300))  # 5 minutes
-    CONFIDENCE_THRESHOLD = float(os.environ.get('CONFIDENCE_THRESHOLD', 0.7))
+    # Security
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-key-change-me'
     
-    # Camera Settings
-    DEFAULT_CAMERAS = [
-        {'id': 'cam_001', 'lat': -1.9441, 'lng': 30.0619, 'name': 'Main Waterhole'},
-        {'id': 'cam_002', 'lat': -1.9500, 'lng': 30.0700, 'name': 'Northern Corridor'},
-        {'id': 'cam_003', 'lat': -1.9300, 'lng': 30.0500, 'name': 'Southern Border'}
-    ]
+    # File uploads
+    UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'app/static/uploads')
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max upload size
+    
+    # Africa's Talking
+    AFRICASTALKING_API_KEY = os.environ.get('AFRICASTALKING_API_KEY')
+    AFRICASTALKING_USERNAME = os.environ.get('AFRICASTALKING_USERNAME')
+    
+    # Alert recipients (add phone numbers with country code)
+    ALERT_RECIPIENTS = os.environ.get('ALERT_RECIPIENTS', '').split(',')
+
+class DevelopmentConfig(Config):
+    DEBUG = True
+    SQLALCHEMY_ECHO = True
+
+class ProductionConfig(Config):
+    DEBUG = False
+    # Use environment variables in production
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    SECRET_KEY = os.environ.get('SECRET_KEY')

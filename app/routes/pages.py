@@ -19,7 +19,12 @@ def help():
 
 @pages_bp.route('/detections')
 def detections():
-    return render_coming_soon('Detections')
+    return render_template('pages/detections.html')
+
+@pages_bp.route('/test-detection')
+def test_detection():
+    """Test page for the wildlife detection system"""
+    return render_template('test_detection.html')
 
 @pages_bp.route('/cameras')
 def cameras():
